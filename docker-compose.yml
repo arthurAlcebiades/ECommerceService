@@ -1,0 +1,101 @@
+﻿networks:
+  ecommerce-network:
+    driver: bridge
+
+services:
+  catalogservice:
+    image: catalogservice
+    build:
+      context: ./CatalogService
+      dockerfile: Dockerfile
+    ports: 
+      - "7195:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__CatalogDb=Server=localhost\SQLEXPRESS;Database=catalogdb;User Id=alcebiadesdbuser;Password=@Alcebiades12;TrustServerCertificate=True
+    depends_on:
+      - catalogdb
+    networks: 
+     - ecommerce-network
+  
+  orderservice:
+    build:
+      context: ./OrderService
+      dockerfile: Dockerfile
+    ports:
+      - "5002:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__OrderDb=Server=localhost\SQLEXPRESS;Database=orderdb;User Id=alcebiadesdbuser;Password=@Alcebiades12;TrustServerCertificate=True
+    depends_on:
+      - orderdb
+    networks: 
+      - ecommerce-network
+        
+  identityservice:
+    build:
+      context: ./IdentityService
+      dockerfile: Dockerfile
+    ports:
+      - "5003:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__IdentityDb=Server=localhost\SQLEXPRESS;Database=identitydb;User Id=alcebiadesdbuser;Password=@Alcebiades12;TrustServerCertificate=True
+      - Jwt__Key=/u43DRic5UreJio2no6I1PihXLTkz6Bm4uFJZqO9ARA=
+      - Jwt__Issuer=IdentityService
+      - Jwt__Audience=ECommerceAPI
+    depends_on:
+      - identitydb
+    networks: 
+      - ecommerce-network
+  
+  apigateway:
+    build:
+      context: ./ApiGateway
+      dockerfile: Dockerfile
+    ports:
+      - "7018:80"
+    networks:
+      - ecommerce-network
+    
+  rabbitmq:
+    image: docker.io/library/rabbitmq:management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+  
+  catalogdb:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: catalogdb
+    ports:
+      - "1434:1433"
+    environment:
+      ACCEPT_EULA: "alcebiadesdbuser"
+      SA_PASSWORD: "@Alcebiades12"
+    networks:
+     - ecommerce-network
+        
+  orderdb:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: orderdb
+    ports:
+      - "1435:1433"
+    environment:
+      ACCEPT_EULA: "alcebiadesdbuser"
+      SA_PASSWORD: "@Alcebiades12"
+    networks:
+     - ecommerce-network
+      
+  identitydb:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: identitydb
+    ports:
+      - "1436:1433"
+    environment:
+      ACCEPT_EULA: "alcebiadesdbuser"
+      SA_PASSWORD: "@Alcebiades12"
+    networks:
+     - ecommerce-network
